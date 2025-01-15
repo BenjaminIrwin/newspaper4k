@@ -14,6 +14,7 @@ from newspaper.extractors.pubdate_extractor import PubdateExtractor
 from newspaper.extractors.title_extractor import TitleExtractor
 from newspaper.extractors.videos_extractor import VideoExtractor
 from newspaper.utils import Video
+from newspaper.extractors.link_extractor import LinkExtractor
 
 log = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ class ContentExtractor:
         categories_extractor (CategoryExtractor): The category extractor object.
         image_extractor (ImageExtractor): The image extractor object.
         video_extractor (VideoExtractor): The video extractor object.
+        link_extractor (LinkExtractor): The link extractor object.
     """
 
     def __init__(self, config: Configuration):
@@ -51,6 +53,7 @@ class ContentExtractor:
         self.categories_extractor = CategoryExtractor(config)
         self.image_extractor = ImageExtractor(config)
         self.video_extractor = VideoExtractor(config)
+        self.link_extractor = LinkExtractor(config)
 
     def get_authors(self, doc: lxml.html.Element) -> List[str]:
         """Fetch the authors of the article, return as a list
@@ -181,3 +184,9 @@ class ContentExtractor:
             List[str]: list of video urls
         """
         return self.video_extractor.parse(doc, top_node)
+
+    def parse_links(
+        self, article_url: str, doc: lxml.html.Element, top_node: lxml.html.Element
+    ):
+        """Parse links in an article"""
+        self.link_extractor.parse(doc, top_node, article_url)

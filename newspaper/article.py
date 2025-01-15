@@ -292,6 +292,9 @@ class Article:
         self.doc: Optional[lxml.html.Element] = None
         self._clean_doc: Optional[lxml.html.Element] = None
 
+        # Store only URLs
+        self.article_links: List[str] = []  # List of URLs found in article
+
     def build(self):
         """Build a lone article from a URL independent of the source (newspaper).
         Don't normally call this method b/c it's good to multithread articles
@@ -488,9 +491,10 @@ class Article:
 
         self.set_movies(self.extractor.get_videos(self.doc, self.top_node))
 
-        self.fetch_images()
-
         if self.top_node is not None:
+            self.extractor.parse_links(self.url, self.doc, self.top_node)
+            self.article_links = self.extractor.link_extractor.get_links()
+            self.fetch_images()
             self._top_node_complemented = document_cleaner.clean(
                 self._top_node_complemented
             )
