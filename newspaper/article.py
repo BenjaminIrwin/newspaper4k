@@ -504,15 +504,15 @@ class Article:
         return self
 
     def fetch_images(self):
-        """Fetch top image, meta image and image list from
+        """Fetch top image, meta image and image list with alt text from
         current cleaned_doc. Will set the attributes: meta_img,
         top_image, images, meta_favicon
         """
-        # TODO: rewrite set_reddit_top_img. I removed it for now
         self.extractor.parse_images(self.url, self.doc, self.top_node)
 
         self.meta_img = self.extractor.image_extractor.meta_image
         self.top_image = self.extractor.image_extractor.top_image
+        # images is now a list of tuples (url, alt_text)
         self.images = self.extractor.image_extractor.images
         self.meta_favicon = self.extractor.image_extractor.favicon
 

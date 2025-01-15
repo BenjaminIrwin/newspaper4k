@@ -24,7 +24,7 @@ class ImageExtractor:
         self.config = config
         self.top_image: Optional[str] = None
         self.meta_image: Optional[str] = None
-        self.images: List[str] = []
+        self.images: List[Tuple[str, str]] = []
         self.favicon: Optional[str] = None
         self._chunksize = 1024
 
@@ -42,9 +42,8 @@ class ImageExtractor:
         if self.meta_image:
             self.meta_image = urljoin_if_valid(article_url, self.meta_image)
         self.images = [
-            urljoin_if_valid(article_url, u)
-            for u in self._get_images(doc)  # Tried to use top_node, but images
-            # were not found in some cases (times_001.html)
+            (urljoin_if_valid(article_url, u), alt)
+            for u, alt in self._get_images(doc)
             if u and u.strip()
         ]
         self.top_image = self._get_top_image(doc, top_node, article_url)
@@ -86,17 +85,19 @@ class ImageExtractor:
 
         return candidates[0][0] if candidates else ""
 
-    def _get_images(self, doc: lxml.html.Element) -> List[str]:
-        def get_src(image):
+    def _get_images(self, doc: lxml.html.Element) -> List[Tuple[str, str]]:
+        def get_src_and_alt(image):
             # account for src, data-src and other attributes
             srcs = [image.attrib.get(x) for x in image.attrib if "src" in x]
             srcs = [x for x in srcs if x and not x.startswith("data:")]
-
             srcs.sort(key=lambda x: 0 if x.lower().startswith("http") else 1)
+            
+            # Get alt text, default to empty string if none exists
+            alt = image.attrib.get("alt", "")
+            
+            return (srcs[0], alt) if srcs else None
 
-            return srcs[0] if srcs else None
-
-        images = [get_src(x) for x in parsers.get_tags(doc, tag="img")]
+        images = [get_src_and_alt(x) for x in parsers.get_tags(doc, tag="img")]
         images = [x for x in images if x]
 
         return images

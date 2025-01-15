@@ -115,6 +115,27 @@ def top_image_fixture():
     return res
 
 
+@pytest.fixture
+def image_alt_fixture():
+    res = []
+    for file in [
+        "cnn_001",
+        "cnn_002", 
+    ]:
+        html = conftest.get_data(file, "html")
+        metadata = conftest.get_data(file, "metadata")
+        res.append({
+            "url": "www.test.com",
+            "html": html,
+            "images": metadata["images"],
+            "image_alts": [
+                ("https://media.cnn.com/api/v1/images/stellar/prod/231106104725-01-donald-trump-court-110623.jpg?c=16x9&q=w_800,c_fill", "Former President Donald Trump arrives at New York Supreme Court on November 6."),
+                ("https://media.cnn.com/api/v1/images/stellar/prod/231106104727-02-donald-trump-court-110623.jpg?c=16x9&q=w_800,c_fill", "Trump testifies in civil fraud trial"),
+            ]
+        })
+    return res
+
+
 class TestArticle:
     def test_article(self, cnn_article):
         article = newspaper.Article(cnn_article["url"], fetch_images=False)
@@ -322,3 +343,20 @@ class TestArticle:
 
         article_ = pickle.load(bytes_io)
         assert article == article_
+
+    def test_image_alt_extraction(self, image_alt_fixture):
+        """Test that image URLs and their alt text are correctly extracted"""
+        for test_case in image_alt_fixture:
+            article = Article(url=test_case["url"], fetch_images=False)
+            article.download(input_html=test_case["html"])
+            article.parse()
+
+            # Test that we get the expected image URL and alt text pairs
+            for img_url, alt_text in test_case["image_alts"]:
+                img_found = False
+                for article_img_url, article_alt_text in article.images:
+                    if img_url == article_img_url:
+                        assert alt_text == article_alt_text
+                        img_found = True
+                        break
+                assert img_found, f"Image {img_url} not found in article images"
